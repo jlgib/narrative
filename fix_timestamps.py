@@ -1,4 +1,4 @@
-#!/usr/bin/python2.6
+#!/usr/bin/python2
 import datetime
 import os
 import re
@@ -75,7 +75,7 @@ def main(argv):
           metadata.read()
           metadata['Exif.Image.DateTime'] = ts
           metadata.write()
-        except IOError, e:
+        except IOError:
           print 'Problem modifying EXIF data for %s.' % filename
 
   print 'Done!'
