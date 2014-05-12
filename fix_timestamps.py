@@ -1,5 +1,6 @@
 #!/usr/bin/python2
 import datetime
+import json
 import os
 import re
 import sys
@@ -45,9 +46,14 @@ def GetParsedValidatedArgv(argv):
   return argv[1], offset
 
 
+def GetJsonPath(jpg_path):
+  dirname, jpg = os.path.split(jpg_path)
+  image, _ = os.path.splitext(jpg)
+  return os.path.join(dirname, 'meta', image, '.json')
+
+
 def main(argv):
   narrative_dir, offset = GetParsedValidatedArgv(argv)
-  print narrative_dir, offset
 
   changes = []
   for dirpath, dirnames, filenames in os.walk(argv[1]):
@@ -63,20 +69,16 @@ def main(argv):
                              int(dir_timestamp.group('min')),
                              int(dir_timestamp.group('sec')))
       ts += datetime.timedelta(hours=offset)
-      changes.append((abspath, ts))
-      print '%s taken at %s' % (abspath, ts.strftime('%A %d %B %Y, %H:%M:%S'))
 
-  if changes:
-    commit = raw_input('commit %s timestamps (y/n)? ' % len(changes))
-    if commit.lower().startswith('y'):
-      for filename, ts in changes:
-        metadata = pyexiv2.ImageMetadata(filename)
-        try:
-          metadata.read()
+      metadata = pyexiv2.ImageMetadata(abspath)
+      try:
+        metadata.read()
+        # TODO(codexile): flag to force even if metadata exists
+        if 'Exif.Image.DateTime' not in metadata:
           metadata['Exif.Image.DateTime'] = ts
           metadata.write()
-        except IOError:
-          print 'Problem modifying EXIF data for %s.' % filename
+      except IOError:
+        print 'Problem modifying EXIF data for %s.  File corrupt?' % filename
 
   print 'Done!'
 
